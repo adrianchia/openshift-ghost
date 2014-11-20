@@ -1,0 +1,21 @@
+{
+  "name": "openshift-ghost",
+  "version": "0.5.5",
+  "description": "Ghost blogging platform for OpenShift",
+  "author": "Adrian Chia<achia@adrianchia.com>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/adrianchia/openshift-ghost.git"
+  },
+  "license": "MIT",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index"
+  },
+  "engines": {
+    "node": "~0.10.0"
+  },
+  "dependencies": {
+    "ghost": "^0.5.5"
+  }
+}

@@ -1,0 +1,3 @@
+#!/bin/bash
+echo "Exporting Node Environment (productionmysql)"
+export NODE_ENV=productionmysql
