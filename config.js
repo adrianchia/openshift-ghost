@@ -29,7 +29,16 @@ config = {
     },
     productionmysql: {
         url: 'http://'+process.env.OPENSHIFT_APP_DNS,
-        mail: {},
+        mail: {
+            transport: 'SMTP',
+            options: {
+                service: 'Sendgrid',
+                auth: {
+                    user: process.env.SENDGRID_USER,
+                    pass: process.env.SENDGRID_PASS
+                }
+            }
+        },
         database: {
             client: 'mysql',
             connection: {
