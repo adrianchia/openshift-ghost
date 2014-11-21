@@ -9,9 +9,11 @@ Running Ghost on OpenShift
 ### MySQL version (default)
 - Execute the following command via rhc, or create from OpenShift web console.
 
-        rhc app create ghost nodejs-0.10 --env NODE_ENV=productionmysql --from-code https://github.com/adrianchia/openshift-ghost.git
+        rhc app create ghost nodejs-0.10 mysql-5.5 --env NODE_ENV=productionmysql --from-code https://github.com/adrianchia/openshift-ghost.git
 
 ### Sqlite3
 To adjust to Sqlite3 version, fork this repository, change pre_start_nodejs and pre_restart_nodejs and set  NODE\_ENV=production,
 
-execute command in MySQL version with different NODE_ENV and point the code to your forked repository.
+execute the following command via rhc, or create from OpenShift web console
+
+rhc app create ghost nodejs-0.10 --env NODE_ENV=production --from-code https://github.com/{your github username}/openshift-ghost.git
