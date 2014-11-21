@@ -25,6 +25,9 @@ config = {
             host: process.env.OPENSHIFT_NODEJS_IP,
             // Port to be passed to node's `net.Server#listen()`, for iisnode set this to `process.env.PORT`
             port: process.env.OPENSHIFT_NODEJS_PORT
+        },
+        paths: {
+            contentPath: path.join(__dirname, '/content/')
         }
     },
     productionmysql: {
@@ -57,6 +60,9 @@ config = {
             host: process.env.OPENSHIFT_NODEJS_IP,
             // Port to be passed to node's `net.Server#listen()`, for iisnode set this to `process.env.PORT`
             port: process.env.OPENSHIFT_NODEJS_PORT
+        },
+        paths: {
+            contentPath: path.join(__dirname, '/content/')
         }
     },
 
