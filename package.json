@@ -16,6 +16,6 @@
     "node": "~0.10.0"
   },
   "dependencies": {
-    "ghost": "^0.5.5"
+    "ghost": "^0.5.6"
   }
 }
