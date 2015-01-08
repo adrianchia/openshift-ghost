@@ -1,6 +1,6 @@
 {
   "name": "openshift-ghost",
-  "version": "0.5.5",
+  "version": "0.5.7",
   "description": "Ghost blogging platform for OpenShift",
   "author": "Adrian Chia<achia@adrianchia.com>",
   "repository": {
