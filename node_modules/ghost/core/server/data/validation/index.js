@@ -4,7 +4,7 @@ var schema    = require('../schema').tables,
     Promise   = require('bluebird'),
     errors    = require('../../errors'),
     config    = require('../../config'),
-    requireTree = require('../../require-tree').readAll,
+    readThemes = require('../../utils/read-themes'),
 
     validateSchema,
     validateSettings,
@@ -25,6 +25,10 @@ validator.extend('notContains', function notContains(str, badString) {
 
 validator.extend('isEmptyOrURL', function isEmptyOrURL(str) {
     return (_.isEmpty(str) || validator.isURL(str, {require_protocol: false}));
+});
+
+validator.extend('isSlug', function isSlug(str) {
+    return validator.matches(str, /^[a-z0-9\-_]+$/);
 });
 
 // Validation against schema attributes
@@ -108,7 +112,7 @@ validateActiveTheme = function validateActiveTheme(themeName) {
         // A Promise that will resolve to an object with a property for each installed theme.
         // This is necessary because certain configuration data is only available while Ghost
         // is running and at times the validations are used when it's not (e.g. tests)
-        availableThemes = requireTree(config.paths.themePath);
+        availableThemes = readThemes(config.paths.themePath);
     }
 
     return availableThemes.then(function then(themes) {
