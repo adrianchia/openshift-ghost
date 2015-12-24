@@ -95,12 +95,12 @@ apiRoutes = function apiRoutes(middleware) {
     router.post('/authentication/invitation', api.http(api.authentication.acceptInvitation));
     router.get('/authentication/invitation', api.http(api.authentication.isInvitation));
     router.post('/authentication/setup', api.http(api.authentication.setup));
-    router.put('/authentication/setup', api.http(api.authentication.updateSetup));
+    router.put('/authentication/setup', authenticatePrivate, api.http(api.authentication.updateSetup));
     router.get('/authentication/setup', api.http(api.authentication.isSetup));
     router.post('/authentication/token',
         middleware.spamPrevention.signin,
         middleware.api.authenticateClient,
-        middleware.api.generateAccessToken
+        middleware.oauth.generateAccessToken
     );
     router.post('/authentication/revoke', authenticatePrivate, api.http(api.authentication.revoke));
 
