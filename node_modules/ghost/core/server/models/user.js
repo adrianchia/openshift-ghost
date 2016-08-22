@@ -48,13 +48,13 @@ User = ghostBookshelf.Model.extend({
             model.emitChange('added');
 
             // active is the default state, so if status isn't provided, this will be an active user
-            if (!model.get('status') || _.contains(activeStates, model.get('status'))) {
+            if (!model.get('status') || _.includes(activeStates, model.get('status'))) {
                 model.emitChange('activated');
             }
         });
         this.on('updated', function onUpdated(model) {
             model.statusChanging = model.get('status') !== model.updated('status');
-            model.isActive = _.contains(activeStates, model.get('status'));
+            model.isActive = _.includes(activeStates, model.get('status'));
 
             if (model.statusChanging) {
                 model.emitChange(model.isActive ? 'activated' : 'deactivated');
@@ -67,7 +67,7 @@ User = ghostBookshelf.Model.extend({
             model.emitChange('edited');
         });
         this.on('destroyed', function onDestroyed(model) {
-            if (_.contains(activeStates, model.previous('status'))) {
+            if (_.includes(activeStates, model.previous('status'))) {
                 model.emitChange('deactivated');
             }
 
@@ -169,9 +169,15 @@ User = ghostBookshelf.Model.extend({
             return role.get('name') === roleName;
         });
     },
+
     enforcedFilters: function enforcedFilters() {
+        if (this.isInternalContext()) {
+            return null;
+        }
+
         return this.isPublicContext() ? 'status:[' + activeStates.join(',') + ']' : null;
     },
+
     defaultFilters: function defaultFilters() {
         return this.isPublicContext() ? null : 'status:[' + activeStates.join(',') + ']';
     }
@@ -234,7 +240,8 @@ User = ghostBookshelf.Model.extend({
                 findOne: ['withRelated', 'status'],
                 setup: ['id'],
                 edit: ['withRelated', 'id'],
-                findPage: ['page', 'limit', 'columns', 'filter', 'order', 'status']
+                findPage: ['page', 'limit', 'columns', 'filter', 'order', 'status'],
+                findAll: ['filter']
             };
 
         if (validOptions[methodName]) {
@@ -276,7 +283,7 @@ User = ghostBookshelf.Model.extend({
 
             query = this.forge(data, {include: options.include});
 
-            query.query('join', 'roles_users', 'users.id', '=', 'roles_users.id');
+            query.query('join', 'roles_users', 'users.id', '=', 'roles_users.user_id');
             query.query('join', 'roles', 'roles_users.role_id', '=', 'roles.id');
             query.query('where', 'roles.name', '=', lookupRole);
         } else {
@@ -360,6 +367,8 @@ User = ghostBookshelf.Model.extend({
         var self = this,
             userData = this.filterData(data),
             roles;
+
+        userData.password = _.toString(userData.password);
 
         options = this.filterOptions(options, 'add');
         options.withRelated = _.union(options.withRelated, options.include);
@@ -466,16 +475,16 @@ User = ghostBookshelf.Model.extend({
         if (action === 'edit') {
             // Owner can only be editted by owner
             if (loadedPermissions.user && userModel.hasRole('Owner')) {
-                hasUserPermission = _.any(loadedPermissions.user.roles, {name: 'Owner'});
+                hasUserPermission = _.some(loadedPermissions.user.roles, {name: 'Owner'});
             }
             // Users with the role 'Editor' and 'Author' have complex permissions when the action === 'edit'
             // We now have all the info we need to construct the permissions
-            if (loadedPermissions.user && _.any(loadedPermissions.user.roles, {name: 'Author'})) {
+            if (loadedPermissions.user && _.some(loadedPermissions.user.roles, {name: 'Author'})) {
                 // If this is the same user that requests the operation allow it.
                 hasUserPermission = hasUserPermission || context.user === userModel.get('id');
             }
 
-            if (loadedPermissions.user && _.any(loadedPermissions.user.roles, {name: 'Editor'})) {
+            if (loadedPermissions.user && _.some(loadedPermissions.user.roles, {name: 'Editor'})) {
                 // If this is the same user that requests the operation allow it.
                 hasUserPermission = context.user === userModel.get('id');
 
@@ -491,7 +500,7 @@ User = ghostBookshelf.Model.extend({
             }
 
             // Users with the role 'Editor' have complex permissions when the action === 'destroy'
-            if (loadedPermissions.user && _.any(loadedPermissions.user.roles, {name: 'Editor'})) {
+            if (loadedPermissions.user && _.some(loadedPermissions.user.roles, {name: 'Editor'})) {
                 // If this is the same user that requests the operation allow it.
                 hasUserPermission = context.user === userModel.get('id');
 
@@ -594,28 +603,32 @@ User = ghostBookshelf.Model.extend({
         var self = this,
             newPassword = object.newPassword,
             ne2Password = object.ne2Password,
-            userId = object.user_id,
+            userId = parseInt(object.user_id),
             oldPassword = object.oldPassword,
             user;
 
+        // If the two passwords do not match
         if (newPassword !== ne2Password) {
             return Promise.reject(new errors.ValidationError(i18n.t('errors.models.user.newPasswordsDoNotMatch')));
         }
 
+        // If the old password is empty when changing current user's password
         if (userId === options.context.user && _.isEmpty(oldPassword)) {
             return Promise.reject(new errors.ValidationError(i18n.t('errors.models.user.passwordRequiredForOperation')));
         }
 
+        // If password is not complex enough
         if (!validatePasswordLength(newPassword)) {
             return Promise.reject(new errors.ValidationError(i18n.t('errors.models.user.passwordDoesNotComplyLength')));
         }
 
         return self.forge({id: userId}).fetch({require: true}).then(function then(_user) {
             user = _user;
+            // If the user is the current user, check old password
             if (userId === options.context.user) {
                 return bcryptCompare(oldPassword, user.get('password'));
             }
-            // if user is admin, password isn't compared
+            // If user is admin and changing another user's password, old password isn't compared to the old one
             return true;
         }).then(function then(matched) {
             if (!matched) {
@@ -755,7 +768,7 @@ User = ghostBookshelf.Model.extend({
 
             // check if user has the owner role
             var currentRoles = contextUser.toJSON(options).roles;
-            if (!_.any(currentRoles, {id: ownerRole.id})) {
+            if (!_.some(currentRoles, {id: ownerRole.id})) {
                 return Promise.reject(new errors.NoPermissionError(i18n.t('errors.models.user.onlyOwnerCanTransferOwnerRole')));
             }
 
@@ -766,7 +779,7 @@ User = ghostBookshelf.Model.extend({
                 user = results[1],
                 currentRoles = user.toJSON(options).roles;
 
-            if (!_.any(currentRoles, {id: adminRole.id})) {
+            if (!_.some(currentRoles, {id: adminRole.id})) {
                 return Promise.reject(new errors.ValidationError('errors.models.user.onlyAdmCanBeAssignedOwnerRole'));
             }
 

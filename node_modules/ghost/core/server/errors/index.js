@@ -17,6 +17,12 @@ var _                          = require('lodash'),
     EmailError                 = require('./email-error'),
     DataImportError            = require('./data-import-error'),
     TooManyRequestsError       = require('./too-many-requests-error'),
+    TokenRevocationError       = require('./token-revocation-error'),
+    VersionMismatchError       = require('./version-mismatch-error'),
+    IncorrectUsage             = require('./incorrect-usage'),
+    Maintenance                = require('./maintenance'),
+    DatabaseNotPopulated       = require('./database-not-populated'),
+    DatabaseVersion            = require('./database-version'),
     i18n                       = require('../i18n'),
     config,
     errors,
@@ -83,18 +89,29 @@ errors = {
         return Promise.reject(err);
     },
 
-    logInfo: function (component, info) {
-        if ((process.env.NODE_ENV === 'development' ||
+    logComponentInfo: function (component, info) {
+        if (process.env.NODE_LEVEL === 'DEBUG' ||
+            process.env.NODE_ENV === 'development' ||
             process.env.NODE_ENV === 'staging' ||
-            process.env.NODE_ENV === 'production')) {
+            process.env.NODE_ENV === 'production') {
             console.info(chalk.cyan(component + ':', info));
         }
     },
 
-    logWarn: function (warn, context, help) {
-        if ((process.env.NODE_ENV === 'development' ||
+    logComponentWarn: function (component, warning) {
+        if (process.env.NODE_LEVEL === 'DEBUG' ||
+            process.env.NODE_ENV === 'development' ||
             process.env.NODE_ENV === 'staging' ||
-            process.env.NODE_ENV === 'production')) {
+            process.env.NODE_ENV === 'production') {
+            console.info(chalk.yellow(component + ':', warning));
+        }
+    },
+
+    logWarn: function (warn, context, help) {
+        if (process.env.NODE_LEVEL === 'DEBUG' ||
+            process.env.NODE_ENV === 'development' ||
+            process.env.NODE_ENV === 'staging' ||
+            process.env.NODE_ENV === 'production') {
             warn = warn || i18n.t('errors.errors.noMessageSupplied');
             var msgs = [chalk.yellow(i18n.t('errors.errors.warning'), warn), '\n'];
 
@@ -143,9 +160,12 @@ errors = {
             context = i18n.t('errors.errors.databaseIsReadOnly');
             help = i18n.t('errors.errors.checkDatabase');
         }
+
         // TODO: Logging framework hookup
         // Eventually we'll have better logging which will know about envs
-        if ((process.env.NODE_ENV === 'development' ||
+        // you can use DEBUG=true when running tests and need error stdout
+        if ((process.env.NODE_LEVEL === 'DEBUG' ||
+            process.env.NODE_ENV === 'development' ||
             process.env.NODE_ENV === 'staging' ||
             process.env.NODE_ENV === 'production')) {
             msgs = [chalk.red(i18n.t('errors.errors.error'), err), '\n'];
@@ -304,7 +324,8 @@ errors = {
         function renderErrorInt(errorView) {
             var stack = null;
 
-            if (statusCode !== 404 && process.env.NODE_ENV !== 'production' && err.stack) {
+            // Not Found and Maintenance Errors don't need a stack trace
+            if (statusCode !== 404 && statusCode !== 503 && process.env.NODE_ENV !== 'production' && err.stack) {
                 stack = parseStack(err.stack);
             }
 
@@ -400,7 +421,8 @@ errors = {
 // using Function#bind for expressjs
 _.each([
     'logWarn',
-    'logInfo',
+    'logComponentInfo',
+    'logComponentWarn',
     'rejectError',
     'throwError',
     'logError',
@@ -431,3 +453,9 @@ module.exports.EmailError                 = EmailError;
 module.exports.DataImportError            = DataImportError;
 module.exports.MethodNotAllowedError      = MethodNotAllowedError;
 module.exports.TooManyRequestsError       = TooManyRequestsError;
+module.exports.TokenRevocationError       = TokenRevocationError;
+module.exports.VersionMismatchError       = VersionMismatchError;
+module.exports.IncorrectUsage             = IncorrectUsage;
+module.exports.Maintenance                = Maintenance;
+module.exports.DatabaseNotPopulated       = DatabaseNotPopulated;
+module.exports.DatabaseVersion            = DatabaseVersion;

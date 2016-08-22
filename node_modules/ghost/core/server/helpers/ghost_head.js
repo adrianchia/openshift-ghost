@@ -75,18 +75,20 @@ function ghost_head(options) {
     if (this.statusCode >= 400) {
         return;
     }
+
     var metaData = getMetaData(this, options.data.root),
         head = [],
         context = this.context ? this.context[0] : null,
         useStructuredData = !config.isPrivacyDisabled('useStructuredData'),
-        safeVersion = this.safeVersion;
+        safeVersion = this.safeVersion,
+        referrerPolicy = config.referrerPolicy ? config.referrerPolicy : 'origin-when-cross-origin';
 
     return getClient().then(function (client) {
         if (context) {
             // head is our main array that holds our meta data
             head.push('<link rel="canonical" href="' +
             escapeExpression(metaData.canonicalUrl) + '" />');
-            head.push('<meta name="referrer" content="origin" />');
+            head.push('<meta name="referrer" content="' + referrerPolicy + '" />');
 
             if (metaData.previousUrl) {
                 head.push('<link rel="prev" href="' +
@@ -98,14 +100,16 @@ function ghost_head(options) {
                 escapeExpression(metaData.nextUrl) + '" />');
             }
 
-            if (context !== 'paged' && context !== 'page' && useStructuredData) {
+            if (context !== 'paged' && useStructuredData) {
                 head.push('');
                 head.push.apply(head, finaliseStructuredData(metaData));
                 head.push('');
 
-                head.push('<script type="application/ld+json">\n' +
-                JSON.stringify(metaData.schema, null, '    ') +
-                '\n    </script>\n');
+                if (metaData.schema) {
+                    head.push('<script type="application/ld+json">\n' +
+                        JSON.stringify(metaData.schema, null, '    ') +
+                        '\n    </script>\n');
+                }
             }
 
             if (client && client.id && client.secret) {

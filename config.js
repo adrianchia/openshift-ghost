@@ -72,6 +72,11 @@ config = {
         // Change this to your Ghost blogs published URL.
         url: 'http://localhost:2368',
 
+        // Example refferer policy
+        // Visit https://www.w3.org/TR/referrer-policy/ for instructions
+        // default 'origin-when-cross-origin',
+        // referrerPolicy: 'origin-when-cross-origin',
+
         // Example mail config
         // Visit http://support.ghost.org/mail for instructions
         // ```
